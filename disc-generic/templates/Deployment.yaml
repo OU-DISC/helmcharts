@@ -1,0 +1,214 @@
+{{- if eq .Values.app.type "StatefulSet" }}
+kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "dbvis.labels" . | nindent 4 }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+spec:
+  {{- if eq .Values.app.type "Deployment" }}
+  strategy:
+    type: {{ .Values.app.updateStrategy }}
+  {{- else if eq .Values.app.type "StatefulSet" }}
+  serviceName: {{ .Release.Name }}
+  {{- end }}
+  replicas: {{ .Values.app.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "dbvis.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "dbvis.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.app.podSecurityContext }}
+      securityContext:
+        {{- with .fsGroup }}
+        fsGroup: {{ . }}
+        {{- end }}
+        {{- with .runAsUser }}
+        runAsUser: {{ . }}
+        {{- end }}
+        {{- with .runAsGroup }}
+        runAsGroup: {{ . }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ .Release.Name }}
+          {{- if .Values.app.image.repository }}
+          image: "{{ required ".Values.app.image.repository is required" .Values.app.image.repository }}:{{ required ".Values.app.image.tag is required" .Values.app.image.tag }}"
+          {{- else }}
+          image: "{{ .Values.app.image.name }}:{{ required ".Values.app.image.tag is required" .Values.app.image.tag }}"
+          {{- end }}
+          {{- if .Values.app.image.cmd }}
+          command: {{-  range .Values.app.image.cmd }}
+            - {{ . }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.app.image.args }}
+          args: {{-  range .Values.app.image.args }}
+            - {{ . }}
+            {{- end }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+          ports:
+            {{- if eq (typeOf .Values.app.port) "[]interface {}" }}
+            {{- range .Values.app.port }}
+            - containerPort: {{ . }}
+            {{- end }}
+            {{- else }}
+            - containerPort: {{ .Values.app.port }}
+            {{- end }}
+          env:
+            {{- if eq (typeOf .Values.app.extraEnv) "string" }}
+{{ tpl .Values.app.extraEnv $ | indent 12 }}
+            {{- else }}
+            {{- range $key, $value := .Values.app.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.app.requests.gpu }}
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: {{ .Values.app.gpu.devices | quote }}
+            {{- end }}
+          {{- with .Values.app.readinessProbe }}
+          readinessProbe:
+{{ tpl . $ | nindent 12 }}
+          {{- end }}
+          {{- with .Values.app.livenessProbe }}
+          livenessProbe:
+{{ tpl . $ | nindent 12 }}
+          {{- end }}
+          {{- with .Values.app.startupProbe }}
+          startupProbe:
+{{ tpl . $ | nindent 12 }}
+          {{- end }}
+            {{- if or .Values.app.requests .Values.app.limits }}
+          resources:
+            {{- with .Values.app.requests }}
+            {{- if or .memory .cpu .ephemeralStorage }}
+            requests:
+              {{- if .memory }}
+              memory: {{ .memory }}
+              {{- end }}
+              {{- if .cpu }}
+              cpu: {{ .cpu }}
+              {{- end }}
+              {{- if .ephemeralStorage }}
+              ephemeral-storage: {{ .ephemeralStorage }}
+              {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- with .Values.app.limits }}
+            {{- if or .memory .cpu .ephemeralStorage }}
+            limits:
+              {{- if .memory }}
+              memory: {{ .memory }}
+              {{- end }}
+              {{- if .cpu }}
+              cpu: {{ .cpu }}
+              {{- end }}
+              {{- if .ephemeralStorage }}
+              ephemeral-storage: {{ .ephemeralStorage }}
+              {{- end }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- if or .Values.app.pvc.enabled .Values.app.hostVolumes .Values.app.configMapVolumes .Values.app.secretVolumes }}
+          volumeMounts:
+            {{- if .Values.app.pvc.enabled }}
+            - mountPath: {{ .Values.app.pvc.mountPath | quote }}
+              name: myglusterfsvol
+            {{- end }}
+            {{- range .Values.app.hostVolumes }}
+            - mountPath: {{ .mountPath }}
+              name: {{ .name }}
+            {{- end }}
+            {{- range .Values.app.configMapVolumes }}
+            - mountPath: {{ .mountPath }}
+              name: {{ .name }}
+              {{- if .readOnly }}
+              readOnly: {{ .readOnly }}
+              {{- end }}
+            {{- end }}
+            {{- range .Values.app.secretVolumes }}
+            - mountPath: {{ .mountPath }}
+              name: {{ .name }}
+              {{- if .readOnly }}
+              readOnly: {{ .readOnly | default true }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+      {{- with .Values.app.regcred }}
+      imagePullSecrets:
+          - name: {{ . }}
+      {{- end }}
+      {{- if or .Values.app.pvc.enabled .Values.app.hostVolumes .Values.app.configMapVolumes .Values.app.secretVolumes }}
+      volumes:
+        {{- if .Values.app.pvc.enabled }}
+        - name: myglusterfsvol
+          persistentVolumeClaim:
+            {{- if .Values.app.pvc.existingClaim }}
+            claimName: {{ .Values.app.pvc.existingClaim }}
+            {{- else }}
+            claimName: {{ .Release.Name }}
+            {{- end }}
+        {{- end }}
+        {{- range .Values.app.hostVolumes }}
+        - name: {{ .name }}
+          hostPath:
+            path: {{ .path }}
+            {{- if .type }}
+            type: {{ .type }}
+            {{- end }}
+        {{- end }}
+        {{- range .Values.app.configMapVolumes }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ tpl .configMapName $}}
+        {{- end }}
+        {{- range .Values.app.secretVolumes }}
+        - name: {{ .name }}
+          secret:
+            name: {{ tpl .secretName $}}
+            optional: {{ .optional | default false }}
+        {{- end }}
+      {{- end }}
+      {{- if or .Values.app.requests.gpu .Values.app.podAntiAffinity }}
+      affinity:
+        {{- with .Values.app.requests.gpu }}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              # this expression will place the pod on any node that has greater or equal the number of GPUs
+              # nvidia.com/gpu.count >= .Values.app.requests.gpu
+              - matchExpressions:
+                  - key: nvidia.com/gpu.count
+                    operator: Gt
+                    values:
+                      - {{ . | quote }}
+              - matchExpressions:
+                  - key: nvidia.com/gpu.count
+                    operator: In
+                    values:
+                      - {{ . | quote }}
+        {{- end }}
+        {{- with .Values.app.podAntiAffinity }}
+        podAntiAffinity:
+{{ tpl . $ | indent 10 }}
+        {{- end }}
+      {{- with .Values.app.requests.gpu }}
+      tolerations:
+        - key: "gpu"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+      {{- end }}
+    {{- end }}

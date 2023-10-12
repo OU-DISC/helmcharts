@@ -1,0 +1,520 @@
+###################################################
+# This is an example pipeline designed to work    #
+# with this helm chart.                           #
+# Please use it and modify it at your discretion. #
+# This example is update with the latest version  #
+# of the helm chart.                              #
+###################################################
+stages:
+  - prepare
+  - build
+  - build:image
+  - deploy
+  - k8:verify
+  - k8:debug
+
+variables:
+  # The suffix of the url (suffix.tld):
+  # feature     branches: branch-name.suffix.tld
+  # staging:    staging.suffix.tld
+  # production: suffix.tld
+  URL_SUFFIX: YOUR_APP.dbvis.de
+  #
+  # The namespace for kubernetes
+  K8_NAMESPACE: YOUR_NAMESPACE
+  #
+  # The release name is combined using this project name, the environment, 
+  # as well as an optional suffix for the git branch name
+  # Example: findc202-review-230-this-is-my-git-branch
+  # The default here is the GitLab project name. You may overwrite this here.
+  RELEASE_NAME_PROJECT: ${CI_PROJECT_NAME}
+  #
+  # This value is chosen carefully as a default and there should be no need to change this if you do not alter the
+  # release name with a prefix or suffix (i.e., change the length of the release name manually)
+  # An example would be that a second deployment is made, (e.g., redis) and the second deployment is named as
+  # $_RELEASE_NAME_PROJECT-redis. In this case, you should 
+  # reduce this value by the suffix including the dash (i.e., -redis => 6) to 47.
+  RELEASE_NAME_MAX_LENGTH: 53
+  #
+  # If you have old deployments, especially PVCs, they use the 
+  # naming format "$ENV-$PROJECT-$BRANCH", for example, "review-project-26-my-branch".
+  # In the new pipeline this format has been changed to "$PROJECT-$ENV-$BRANCH",
+  # for example, "project-review-26-my-branch".
+  # This new format is more useful as it will group all deployments, pods, etc. for
+  # one project together.
+  # You can turn on legacy mode by switching to "yes" to continue using the old name format.
+  # This is useful if you have old resources, such as PVCs and don't want to migrate them.
+  USE_LEGACY_RELEASE_NAME: "no"
+  #
+  # Deploy production on tags (yes / no)
+  # If "no", the production deployment will be done when pushed to staging (e.g., master)
+  DEPLOY_ON_TAGS: "no"
+  #
+  # Build and deploy feature branches (yes / no)
+  DEPLOY_FB: "no"
+  #
+  # The name of the staging branch
+  STAGING_BRANCH: main
+  #
+  # Helm chart (default dbvis-generic-chart)
+  HELM_CHART: oci://registry.dbvis.de/support/websites/generic-helm-chart/dbvis-generic
+  #
+  # Helm chart version
+  HELM_CHART_VERSION: 3.7.0
+  #
+  # Helm values.yaml
+  HELM_VALUES_YAML: ./values.yaml
+  #
+  # Dockerfile location (default in root)
+  DOCKERFILE_LOC: ./Dockerfile
+  #
+  # Docker context (default root)
+  DOCKER_CONTEXT: ./
+  #
+  # Helm Timeout.
+  # Helm will wait until all deployed resources (pods,ingress,etc) show ready state
+  # Increase the timeout if you deploy things that have a long start up time.
+  HELM_TIMEOUT: 10m0s
+  #
+  # Helm image
+  HELM_IMAGE: alpine/helm:3.9.1
+  #
+  # Kubectl image
+  KUBECTL_IMAGE: bitnami/kubectl:1.24.3
+  #
+  # 
+  REPLICA_COUNT_PRODUCTION: 1
+  #
+  #
+  REPLICA_COUNT_STAGING: 1
+  #
+  #
+  REPLICA_COUNT_FB: 1
+
+###########################################
+# DEFINE BRANCH TRIGGER RULES
+###########################################
+
+#--------------------
+# Deployment
+#--------------------
+
+.rules: &rules
+  rules:
+    # do not run pipelines for merge requests (gets rid of "detatched pipelines")
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
+    # if this is set, run this job all the time
+    - if: $RUN_ALWAYS == "yes"
+      when: on_success
+    # for feature branches
+    - if: $DEPLOY_FB == "yes" && $RUN_ON_FB == "yes" && $CI_COMMIT_BRANCH != $STAGING_BRANCH && $CI_COMMIT_TAG == null
+      when: on_success
+    # if we want tags and it's a staging job
+    - if: $DEPLOY_ON_TAGS == "yes" && $RUN_ON_MASTER == "yes" && $CI_COMMIT_BRANCH == $STAGING_BRANCH
+      when: on_success
+    # if we don't want tags and it's a production job
+    - if: $DEPLOY_ON_TAGS == "no" && $RUN_ON_TAG == "yes" && $CI_COMMIT_BRANCH == $STAGING_BRANCH
+      when: on_success
+    # if we want tags and it is actually a tag
+    - if: $DEPLOY_ON_TAGS == "yes" && $RUN_ON_TAG == "yes" && $CI_COMMIT_TAG =~ /^v.*/
+      when: on_success
+    # default is on_success, so explicitly set job not to run if none of the above rules matched
+    - when: never
+
+#--------------------
+# Environment Cleanup
+#--------------------
+
+.rules-cleanup: &rules-cleanup
+  rules:
+    # do not run pipelines for merge requests (gets rid of "detatched pipelines")
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
+    # if this is set, run this job all the time
+    - if: $RUN_ALWAYS == "yes"
+      when: manual
+    # run if files changed
+    # and if it should run on a feature branch or it should run on master
+    # - changes:
+    #     - Backend/**/*
+    #     - k8/Backend/**/*
+    #     - .gitlab-ci.yml
+    - if: $RUN_ON_FB == "yes" && $CI_COMMIT_BRANCH != $STAGING_BRANCH && $CI_COMMIT_TAG == null
+      when: manual
+      allow_failure: true
+    # - changes:
+    #     - Backend/**/*
+    #     - k8/Backend/**/*
+    #     - .gitlab-ci.yml
+    - if: $RUN_ON_MASTER == "yes" && $CI_COMMIT_BRANCH == $STAGING_BRANCH
+      when: manual
+      allow_failure: true
+    # default is on_success, so explicitly set job not to run if none of the above rules matched
+    - when: never
+
+###########################################
+# SETUP ENVIRONMENT VARIALBES
+###########################################
+
+export-environment:
+  image: alpine:3.18.4
+  stage: prepare
+  script:
+    - echo $CI_COMMIT_BRANCH
+    - echo $STAGING_BRANCH
+    # set the version either as a tag (v0.0.1) or as a commit sha (74bac331)
+    - |
+      if $(echo "$CI_COMMIT_TAG" | grep -q -E "^v[0-9]+(.[0-9]+)?(.[0-9]+)?")
+      then
+        VERSION=${CI_COMMIT_TAG}
+      else 
+        VERSION=${CI_COMMIT_SHORT_SHA}
+      fi
+    # the current URL suffix
+    #- URL_SUFFIX="covis.dbvis.de" # defined in the variables section
+    # The maximum url length for lets encrypt is 63.
+    # the length of the branch url-prefix must therefore be shortened accordingly
+    # the line below calculates how many characters are remaining for the branch-prefix-url
+    - REMAINING_LENGTH=$((60 - $(echo ${URL_SUFFIX} | wc -m)))
+    # this shortens the slug to 30 characters and removes all trailing dashes
+    - SHORTENED_CI_COMMIT_REF_SLUG=$(echo ${CI_COMMIT_REF_SLUG} | tr / - | cut -c -${REMAINING_LENGTH} |  sed -E 's#-+$##')
+    - URL_PREFIX=""
+    - ENV_TYPE="review"
+    - REPLICA_COUNT="${REPLICA_COUNT_PRODUCTION}"
+    # Determine what ENV_TYPE it is (production, staging or review)
+    - |
+      if [ "${DEPLOY_ON_TAGS}" == "yes" ] && $(echo "$CI_COMMIT_TAG" | grep -q -E "^v[0-9]+(.[0-9]+)?(.[0-9]+)?")
+      then
+        ENV_TYPE="production"
+      fi
+    - |
+      if [ "${DEPLOY_ON_TAGS}" == "yes" ] && [ "${CI_COMMIT_BRANCH}" == "${STAGING_BRANCH}" ]
+      then
+        ENV_TYPE="staging"
+      elif [ "${DEPLOY_ON_TAGS}" == "no" ] && [ "${CI_COMMIT_BRANCH}" == "${STAGING_BRANCH}" ]
+      then
+        ENV_TYPE="production"
+      fi
+    # default raw release name for production (only ENV_TYPE and GitLab Project name without branch)
+    - |
+      if [ "${USE_LEGACY_RELEASE_NAME}" == "yes" ]
+      then
+        RELEASE_NAME_RAW="${ENV_TYPE}/${RELEASE_NAME_PROJECT}"
+      else
+        RELEASE_NAME_RAW="${RELEASE_NAME_PROJECT}/${ENV_TYPE}"
+      fi
+    # Determine URL, ReplicaCount, and ReleaseName based on ENV_TYPE
+    - |
+      if [ "${ENV_TYPE}" == "staging" ]
+      then 
+        URL_PREFIX="staging."
+        REPLICA_COUNT="${REPLICA_COUNT_STAGING}"
+      fi
+    - |
+      if [ "${ENV_TYPE}" == "review" ]
+      then 
+        URL_PREFIX="${SHORTENED_CI_COMMIT_REF_SLUG}."
+        REPLICA_COUNT="${REPLICA_COUNT_FB}"
+      fi
+    - |
+      if [ "${ENV_TYPE}" == "review" ] || [ "${ENV_TYPE}" == "staging" ]
+      then
+        if [ "${USE_LEGACY_RELEASE_NAME}" == "yes" ]
+        then
+          RELEASE_NAME_RAW="${ENV_TYPE}/${RELEASE_NAME_PROJECT}/${CI_COMMIT_REF_SLUG}"
+        else
+          RELEASE_NAME_RAW="${RELEASE_NAME_PROJECT}/${ENV_TYPE}/${CI_COMMIT_REF_SLUG}"
+        fi
+      fi
+    # Build the backend url: prefix.api.suffix
+    - URL_FULL="${URL_PREFIX}${URL_SUFFIX}"
+    - URL_LENGTH=$(echo "${URL_FULL}" | wc -m)
+    - |
+      if [ "${URL_LENGTH}" -gt "63" ]
+      then 
+        echo -e "\n\n!!!The URL ${URL_FULL} is too long (>63 characters) for lets encrypt certificates!!!\n\n"
+        exit 1
+      fi
+    # generating the release name from the environment name and remove invalid characters and shorten it
+    - RELEASE_NAME=$(echo "${RELEASE_NAME_RAW}" | tr / - | tr . - | tr _ - | tr '[:upper:]' '[:lower:]' | cut -c -${RELEASE_NAME_MAX_LENGTH} | sed -E 's#-+$##')
+    # The name of your helm release (e.g. name of deployment in kubernetes, e.g.: production-YOUR_GITLAB_PROJECT_NAME OR review-YOUR_GITLAB_PROJECT_NAME-BRANCH_NAME)
+    - echo "RELEASE_NAME=${RELEASE_NAME}" >> var.env
+    # all the stuff into the var.env (can be either "production", "staging", "review")
+    - echo "ENV_TYPE=${ENV_TYPE}" >> var.env
+    - echo "RELEASE_NAME_PROJECT=${RELEASE_NAME_PROJECT}" >> var.env
+    # the version (either the tag name, e.g. "v1.7.0" or a short commit hash e.g. "dc1fd75f")
+    - echo "VERSION=${VERSION}" >> var.env
+    # the generated url (e.g. YOUR_APP.dbvis.de OR staging.YOUR_APP.dbvis.de OR BRANCH-NAME.YOUR_APP.dbvis.de)
+    - echo "URL_FULL=${URL_FULL}" >> var.env
+    # the number of replicas as per settings above
+    - echo "REPLICA_COUNT=${REPLICA_COUNT}" >> var.env
+    # setting container environment (kaniko bug)
+    - echo "container=kube" >> var.env
+    # DEBUG
+    - cat var.env
+  artifacts:
+    paths:
+      - ./var.env
+    expire_in: 300 days
+  tags:
+    - no-cache
+
+###########################################
+# BUILD
+###########################################
+
+# place in any build jobs here to compile your code
+# build-angular:
+#   image: node:lts-alpine
+#   stage: build
+#   script:
+#     - npm ci
+#     - npm run-script build -c production --no-progress
+#   artifacts:
+#     paths:
+#       - dist/
+#     expire_in: 1 hour
+#   tags:
+#     - docker
+
+###########################################
+# DOCKERIZE
+###########################################
+
+build:image:
+  stage: build:image
+  image:
+    name: gcr.io/kaniko-project/executor:v1.16.0-debug
+    entrypoint: [""]
+  script:
+    - source ./var.env
+    # Login
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    # define the image (version is either a git-tag or a short git-commit-sha
+    - IMG="${CI_REGISTRY_IMAGE}/${CI_COMMIT_BRANCH}:${VERSION}"
+    # build and push :)
+    - >
+      /kaniko/executor 
+      --registry-mirror registry-mirror.dbvis.de 
+      --context $DOCKER_CONTEXT 
+      --dockerfile $DOCKERFILE_LOC 
+      --destination $IMG 
+      --cache=true
+      --force
+  tags:
+    - no-cache
+
+###########################################
+# DEPLOY
+###########################################
+
+.deploy-script: &deploy-template
+  stage: deploy
+  image:
+    name: $HELM_IMAGE
+    entrypoint: ["sh", "-c", "apk add bash sed && /bin/bash"]
+  script:
+    - source ./var.env
+    # set default namespace
+    - export HELM_NAMESPACE=${K8_NAMESPACE}
+    # Login helm into docker registry
+    - echo ${CI_REGISTRY_PASSWORD} | helm registry login -u ${CI_REGISTRY_USER} --password-stdin ${CI_REGISTRY}
+    # dry run to install chart
+    - >
+      helm upgrade 
+      ${RELEASE_NAME} 
+      ${HELM_CHART} 
+      --version ${HELM_CHART_VERSION} 
+      --dry-run 
+      --debug 
+      --install 
+      -f "${HELM_VALUES_YAML}" 
+      --set app.image.tag="${VERSION}" 
+      --set app.ingress.url=${URL_FULL} 
+      --set app.replicaCount=${REPLICA_COUNT} 
+      --set app.image.repository=${CI_REGISTRY_IMAGE}/${CI_COMMIT_BRANCH}
+    # actually install chart
+    - >
+      helm upgrade 
+      ${RELEASE_NAME} 
+      ${HELM_CHART} 
+      --version ${HELM_CHART_VERSION} 
+      --install 
+      --atomic 
+      --timeout "${HELM_TIMEOUT}" 
+      -f "${HELM_VALUES_YAML}" 
+      --set app.image.tag="${VERSION}" 
+      --set app.ingress.url=${URL_FULL} 
+      --set app.replicaCount=${REPLICA_COUNT} 
+      --set app.image.repository=${CI_REGISTRY_IMAGE}/${CI_COMMIT_BRANCH}
+  tags:
+    - no-cache
+
+.deploy:
+  <<: *deploy-template
+  <<: *rules
+  variables:
+    RUN_ON_FB: "no"
+    RUN_ON_MASTER: "no"
+    RUN_ON_TAG: "no"
+  environment:
+    url: https://$URL_FULL
+    name: $ENV_TYPE/$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG
+    kubernetes:
+      namespace: $K8_NAMESPACE
+  artifacts:
+    reports:
+      dotenv: var.env
+
+deploy-fb:
+  extends: .deploy
+  variables:
+    ENV_TYPE: review
+    RUN_ON_FB: "yes"
+  environment:
+    on_stop: remove-deployment-fb
+
+deploy-staging:
+  extends: .deploy
+  variables:
+    ENV_TYPE: staging
+    RUN_ON_MASTER: "yes"
+
+deploy-production:
+  extends: .deploy
+  variables:
+    ENV_TYPE: production
+    RUN_ON_TAG: "yes"
+  environment:
+    name: $ENV_TYPE/$CI_PROJECT_NAME
+
+
+###########################################
+# VERIFY & DEBUG
+###########################################
+
+.verify:
+  <<: *rules
+  stage: k8:verify
+  image: curlimages/curl:8.4.0
+  dependencies:
+    - export-environment
+  script:
+    - source ./var.env
+    - >
+      curl 
+      -v 
+      --fail 
+      --connect-timeout 10 
+      --max-time 10 
+      --retry 20 
+      --retry-delay 10 
+      --retry-max-time 120 
+      "${URL_FULL}"
+  retry: 2
+  tags:
+    - no-cache
+
+verify-fb:
+  extends: .verify
+  variables:
+    ENV_TYPE: review
+    RUN_ON_FB: "yes"
+
+verify-staging:
+  extends: .verify
+  variables:
+    ENV_TYPE: staging
+    RUN_ON_MASTER: "yes"
+
+verify-production:
+  extends: .verify
+  variables:
+    ENV_TYPE: production
+    RUN_ON_TAG: "yes"
+
+
+debug k8 cluster state:
+  stage: k8:debug
+  image:
+    name: $KUBECTL_IMAGE
+    entrypoint: [""]
+  script:
+    - source ./var.env
+    # set default namespace
+    - export HELM_NAMESPACE=${K8_NAMESPACE}
+    - "kubectl describe node || :"
+    - "kubectl describe service \"${RELEASE_NAME}\" || :"
+    - "kubectl describe ingress \"${RELEASE_NAME}\" || :"
+    - "kubectl describe deployment \"${RELEASE_NAME}\" || :"
+    - "kubectl describe replicaset \"${RELEASE_NAME}\" || :"
+    - "kubectl describe pod \"${RELEASE_NAME}\" || :"
+    - "kubectl describe pvc \"${RELEASE_NAME}\" || :"
+    - "kubectl describe pv \"${RELEASE_NAME}\" || :"
+    - "kubectl logs $(kubectl get pods | awk -v pattern=\"${RELEASE_NAME}\" '$0 ~ pattern {print $1;exit}') || :"
+  when: always
+  tags:
+    - no-cache
+  allow_failure: true
+
+###########################################
+# CLEANUP NEW ENV
+###########################################
+
+.remove-deployment:
+  stage: deploy
+  image:
+    name: $HELM_IMAGE
+    entrypoint: ["sh", "-c", "apk add bash curl && /bin/bash"]
+  variables:
+    GIT_STRATEGY: none
+    RUN_ON_FB: "no"
+    RUN_ON_MASTER: "no"
+    RUN_ON_TAG: "no"
+    REG_SHA256: ade837fc5224acd8c34732bf54a94f579b47851cc6a7fd5899a98386b782e228
+    REG_VERSION: 0.16.1
+  script:
+    # set default namespace
+    - export HELM_NAMESPACE=${K8_NAMESPACE}
+    - echo $KUBECONFIG
+    # we cannot use the RELEASE_NAME from the export-environment job as the remove job needs to be independent
+    - |
+      if [ "${USE_LEGACY_RELEASE_NAME}" == "yes" ]
+      then
+        RELEASE_NAME_RAW="${ENV_TYPE}/${RELEASE_NAME_PROJECT}/${CI_COMMIT_REF_SLUG}"
+      else
+        RELEASE_NAME_RAW="${RELEASE_NAME_PROJECT}/${ENV_TYPE}/${CI_COMMIT_REF_SLUG}"
+      fi
+    - RELEASE_NAME=$(echo "${RELEASE_NAME_RAW}" | tr / - | tr . - | tr _ - | tr '[:upper:]' '[:lower:]' | cut -c -${RELEASE_NAME_MAX_LENGTH} | sed -E 's#-+$##')
+    # DEBUG
+    - echo $RELEASE_NAME
+    - helm status ${RELEASE_NAME} && helm delete --dry-run --debug ${RELEASE_NAME} || true
+    - helm status ${RELEASE_NAME} && helm delete ${RELEASE_NAME} || true
+    # download and install reg
+    - curl --fail --show-error --location "https://github.com/genuinetools/reg/releases/download/v$REG_VERSION/reg-linux-amd64" --output ./reg
+    - echo "$REG_SHA256  ./reg" | sha256sum -c -
+    - chmod a+x ./reg
+    # delete image from registry
+    - |
+      for TAG in `./reg tags --auth-url $CI_REGISTRY -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD "${CI_REGISTRY_IMAGE}/${CI_COMMIT_BRANCH}"`
+      do
+        echo "Delete tag: ${CI_REGISTRY_IMAGE}/${CI_COMMIT_BRANCH}:${TAG}"
+        ./reg rm -d --auth-url $CI_REGISTRY -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD "${CI_REGISTRY_IMAGE}/${CI_COMMIT_BRANCH}:${TAG}"
+      done
+  dependencies: []
+  allow_failure: true
+  tags:
+    - no-cache
+
+remove-deployment-fb:
+  extends: .remove-deployment
+  <<: *rules-cleanup
+  variables:
+    APP: backend
+    ENV_TYPE: review
+    RUN_ON_FB: "yes"
+  environment:
+    name: $ENV_TYPE/$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG
+    action: stop

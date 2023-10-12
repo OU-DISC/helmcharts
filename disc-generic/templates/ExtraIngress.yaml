@@ -1,0 +1,49 @@
+{{- if .Values.app.extraIngresses }}
+{{- range .Values.app.extraIngresses }}
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ .url | replace "." "-" }}
+  annotations:
+    # kubernetes.io/ingress.class: nginx
+    {{- include "nginx.annotations" $ | nindent 4 }}
+    {{- if .auth }}
+    {{- if .auth.enabled }}
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-realm: {{ .auth.prompt | default $.Values.app.ingress.auth.prompt | quote }}
+    nginx.ingress.kubernetes.io/auth-secret: {{ .auth.secret | default $.Values.app.ingress.auth.secret }}
+    {{- end }}
+    {{- end }}
+    {{- if .internal }}
+    {{- if .internal.enabled }}
+    nginx.ingress.kubernetes.io/whitelist-source-range: {{ .internal.whitelistSourceRange | default $.Values.app.ingress.internal.whitelistSourceRange }}
+    {{- end }}
+    {{- end }}
+    {{- if .extraAnnotations }}
+    {{ tpl .extraAnnotations $ | nindent 4 }}
+    {{- end }}
+  labels:
+    {{- include "dbvis.labels" $ | nindent 4 }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ .url | replace "." "-" }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version }}
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - {{ required ".url is required" .url }}
+      secretName: {{ .url | replace "." "-" }}-tls
+  rules:
+      - host: {{ required ".url is required" .url }}
+        http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: {{ $.Release.Name }}
+                  port:
+                    name: http
+---
+{{- end }}
+{{- end }}

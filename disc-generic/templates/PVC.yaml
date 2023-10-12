@@ -1,0 +1,21 @@
+{{- if and (eq .Values.app.pvc.enabled true) (not .Values.app.pvc.existingClaim) }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "dbvis.labels" . | nindent 4 }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+spec:
+  storageClassName: {{ .Values.app.pvc.storageClassName }}
+  {{- if .Values.app.pvc.volumeName }}
+  volumeName: {{ .Values.app.pvc.volumeName }}
+  {{- end }}
+  accessModes:
+    - {{ .Values.app.pvc.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.app.pvc.storage }}
+{{- end }}

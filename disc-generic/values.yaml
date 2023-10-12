@@ -1,0 +1,252 @@
+# Default values for lingvis-server
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+app:
+  image:
+    repository: null
+    tag: latest
+    pullPolicy: Always
+    # cmd: ["your_cmd"]
+    # args: ["an", "array", "of", "values"]
+
+  # either StatefulSet or Deployment
+  type: Deployment
+  replicaCount: 1
+  # port can be a number or an array if you wish to open multiple ports
+  port: 80
+  # Multiple ports
+  # If you issue multiple ports, and use an ingress, the ingress will always point to the first port of your list.
+  # port:
+  #   - 80
+  #   - 8080
+
+
+  podSecurityContext: null
+    # runAsUser: 1000
+    # runAsGroup: 3000
+    # fsGroup: 2000
+
+  health: "/"
+  regcred: null
+  # change to `Recreate` if you want your pods to 
+  # be killed before the new ones are started up
+  updateStrategy: RollingUpdate
+
+  #
+  extraEnv: |
+#    - name: DEBUG
+#      value: true
+#    - name: TEST_VAR
+#      value: this is a test
+#    - name: RELEASE_NAME
+#      value: {{ .Release.Name }}
+#    - name: PASSWORD
+#      valueFrom:
+#        secretKeyRef:
+#          name: <SECRET-NAME>
+#          key: <FIELD-IN-SECRET>
+#          optional: false
+
+
+  readinessProbe: |
+    httpGet:
+      path: {{ .Values.app.health }}
+      {{- if eq (typeOf .Values.app.port) "[]interface {}" }}
+      port: {{ first .Values.app.port }}
+      {{- else }}
+      port: {{ .Values.app.port }}
+      {{- end }}
+    initialDelaySeconds: 3
+    timeoutSeconds: 5
+    periodSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+
+  livenessProbe: |
+    httpGet:
+      path: {{ .Values.app.health }}
+      {{- if eq (typeOf .Values.app.port) "[]interface {}" }}
+      port: {{ first .Values.app.port }}
+      {{- else }}
+      port: {{ .Values.app.port }}
+      {{- end }}
+    initialDelaySeconds: 6
+    timeoutSeconds: 5
+    periodSeconds: 5
+    failureThreshold: 4
+    successThreshold: 1
+
+  startupProbe: null
+
+  podAntiAffinity: null
+  # Uncomment the following to spread out your pods (replica > 1) onto different hosts (defined by topology.rook.io/chassis)
+  # podAntiAffinity: |
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #       - weight: 100
+  #         podAffinityTerm:
+  #           labelSelector:
+  #             matchExpressions:
+  #             - key: deploymentName
+  #               operator: In
+  #               values:
+  #               - {{ .Release.Name }}
+  #           topologyKey: topology.rook.io/chassis
+
+  gpu:
+    # this is only active if app.requests.gpu is set
+    # With the default "all" it will give you access 
+    # to all GPU devices that are available on the node.
+    # You may also define specific device-indices such as "0,2"
+    # which would only give you access to GPU0 and GPU2
+    # from that node. Alternatively, you may also specify the
+    # device id.
+    # More information is available here: https://github.com/NVIDIA/nvidia-container-runtime#nvidia_visible_devices
+    # You can check which GPUs are currently being used here: https://k8-grafana.dbvis.de/d/Oxed_c6Wz/nvidia-dcgm-exporter-dashboard?orgId=1&refresh=5s
+    # Added: 3.4.0
+    devices: all
+
+  requests:
+    cpu: null
+    memory: null
+    ephemeralStorage: null
+    # Define the desired number of GPUs. 
+    # The pod will be placed on a node that has _at least_ the number of GPUs available. 
+    # However, it will not be ensured that the GPUs are free. 
+    # If multiple workloads use the same GPUs, the GPUs will rebalance the load and the application will be a little bit slower.
+    # The number here is not a limit. If you specify one GPU (`1`) and the node where the pod is placed has four (`4`) GPUs
+    # available, your application will have access to all four GPUs if you do not take any measures in your code.
+    # Added: 3.4.0
+    gpu: null
+  limits:
+    cpu: null
+    memory: null
+    ephemeralStorage: null
+
+  pvc:
+    enabled: false
+    # Use this if you want to mount an already existing claim.
+    existingClaim: null
+    # default here, can be changed to local-storage (talk to Matt before)
+    storageClassName: local-storage
+    # in case of local-storage (talk to Matt before)
+    volumeName: null
+    accessMode: ReadWriteMany
+    storage: 1Gi
+    mountPath: "/tmp/app"
+
+  ingress:
+    enabled: true
+    url: null
+    auth:
+      enabled: false
+      prompt: This website is password protected. Please enter a username and password.
+      # A secret needs to be created and referred to here.
+      # Structure of the secret:
+      #
+      # kind: Secret
+      # apiVersion: v1
+      # metadata:
+      #   name: basic-auth
+      # stringData:
+      #   auth: dbvis:$apr1$nfk8tuw7$Um3.ixncy32b9j/q475RQ.
+      # type: Opaque
+      #
+      secret: basic-auth
+    internal:
+      enabled: false
+      # this is the whitelist for the LSKeim Network.
+      # If enabled, your app will be only reachable from the LSKeim network (example: hiwis.dbvis.de)
+      # Change /32 to /16 if students or university partners should also access the service
+      whitelistSourceRange: 134.34.225.45/32
+    # Possible additional annotations are available here:
+    # https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/
+    ## Increasing proxy-body-size solves HTTP 413 issues
+    extraAnnotations: |
+      nginx.ingress.kubernetes.io/proxy-body-size: 8m
+
+  extraIngresses: []
+    # - url: test.local
+    #   # OPTIONAL
+    #   auth:
+    #     enabled: false
+    #     # OPTIONAL --> default: app.ingress.auth.prompt
+    #     prompt: This website is password protected. Please enter a username and password.
+    #     # OPTIONAL --> default: app.ingress.auth.secret
+    #     secret: basic-auth
+    #   # OPTIONAL
+    #   internal:
+    #     enabled: false
+    #     # OPTIONAL --> default: app.ingress.internal.whitelistSourceRange
+    #     whitelistSourceRange: 134.34.225.45
+    # - url: test2.local
+    #   auth:
+    #     enabled: false
+    #     prompt: This website is password protected. Please enter a username and password.
+    #     secret: basic-auth
+
+  hostVolumes: []
+  # - name: myhostvolume
+  #   path: /path/on/host
+  #   mountPath: /path/in/container
+  #   see here: https://kubernetes.io/docs/concepts/storage/volumes/#hostpath
+  #   type: Directory
+  
+  configMapVolumes: []
+  # # # if you want to use the maps defind below, prefix configMapName with "{$.Release.Name}-"
+  # - name: configmap1vol
+  #   configMapName: "{{ $.Release.Name }}-configmap1"
+  #   mountPath: /configmaps/configmap1
+  #
+  # - name: configmap2vol
+  #   configMapName: "{{ $.Release.Name }}-configmap2"
+  #   mountPath: /configmaps/configmap2
+
+
+  configMaps: []
+  # # will automatically be prefixed with "{$.Release.Name}-"
+  #  - name: configmap1
+  #    data:
+  #      file1: |-
+  #        multi-line-string
+  #        content
+  #      file2: ...
+  #
+  #  - name: configmap2
+  #    data:
+  #      file1: ...
+  #      file2: ...
+
+
+  secretVolumes: []
+  ### if you want to use the secrets defined below, prefix secretName with "${$.Release.Name}"
+  # - name: secret1vol
+  #   secretName: "{{ $.Release.Name }}-secret1"
+  #   mountPath: /mysecrets/secret1
+  ### This is the default. Secrets should not be changed from a container
+  #   readOnly: true
+  #
+  ### The following secret defined in the secretvolume must be generated manually as it does not use the .Release.Name
+  # - name: secret2vol
+  #   secretName: my-manual-secret
+  #   mountPath: /mymanualsecret
+
+  secrets: []
+  ### Secrets defined here will be automatically prefixed with .Release.Name to avoid any collisions.
+  # - name: secret1
+  ### this will be resolved as {{.Release.Name}}-secret1
+  ### The default type is Opaque
+  #   type: Opaque
+  ### If this is false the deployment will fail if the secret does not exist
+  #   optional: true
+  ### Define the stringData for your secret. The .stringData assumes LITERAL strings
+  #   stringData:
+  #     file1: |-
+  #       This is a multiline
+  #       secret
+  #     file2: This is a single line secret
+  ### Optional: Define data for your secret. The .data assumes BASE64 ENCODED strings
+  ### The value for file3 is "this is a test" with base64 encoding
+  #   data:
+  #     file3: dGhpcyBpcyBhIHRlc3Q=
+

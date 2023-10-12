@@ -1,0 +1,17 @@
+apiVersion: v1
+entries:
+  disc-generic:
+  - apiVersion: v1
+    appVersion: 1.0.0
+    created: "2023-10-12T09:00:51.267748-07:00"
+    description: Deploys a DISC app
+    digest: bcf4f0b08b75181cab7871ee1d0261b3f34997cce92f33266d12fc15e7b501ce
+    home: https://github.com/OU-DISC/helmcharts
+    maintainers:
+    - email: wjentner@ou.edu
+      name: Wolfgang Jentner
+    name: disc-generic
+    urls:
+    - disc-generic-3.7.0.tgz
+    version: 3.7.0
+generated: "2023-10-12T09:00:51.2666177-07:00"
