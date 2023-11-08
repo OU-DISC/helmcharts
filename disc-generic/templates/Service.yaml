@@ -8,12 +8,18 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
 spec:
+  {{- if .Values.app.nodePort }}
+  type: NodePort
+  {{- end }}
   ports:
     {{- if eq (typeOf .Values.app.port) "[]interface {}" }}
     {{- with (first .Values.app.port) }}
     - name: http
       targetPort: {{ . }}
       port: {{ . }}
+      {{- if .Values.app.nodePort }}
+      nodePort: {{ .Values.app.nodePort }}
+      {{- end }}
     {{- end }}
     {{- range (rest .Values.app.port) }}
     - name: {{ . | quote }}
@@ -24,6 +30,9 @@ spec:
     - name: http
       targetPort: {{ .Values.app.port }}
       port: {{ .Values.app.port }}
+      {{- if .Values.app.nodePort }}
+      nodePort: {{ .Values.app.nodePort }}
+      {{- end }}
     {{- end }}
   selector:
     {{- include "dbvis.labels" . | nindent 4 }}

@@ -21,6 +21,10 @@ app:
   #   - 80
   #   - 8080
 
+  # Optional: Defines the node port for the service. 
+  # Must be in range 30000-32767. 
+  # A node port cannot be allocated by two services at the same time.
+  nodePort: null
 
   podSecurityContext: null
     # runAsUser: 1000

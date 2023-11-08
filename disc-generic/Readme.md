@@ -123,6 +123,7 @@ Parameter | Description | Default | Added in version
 `app.type` | Either `Deployment` or `StatefulSet` | `Deployment` | 2.6.0
 `app.replicaCount` | Number of replicas | `1`
 `app.port` | Defines the container port(s) and port(s) for service. Can be either a single port `app.port: 80` or a list of ports `app.port: [80, 8080]` (number or name). The first port is used for the liveness and readiness probes (if applicable). Currently only the first port is supported as external ingress. See values.yaml for more. | `1313`
+`app.nodePort` | Optional: Defines the node port for the service. Must be in range `30000-32767`. A node port cannot be allocated by two services at the same time. | `null` | 3.8.0
 `app.health` | Defines the path for the httpGet health and readiness check. Can be overwritten in `app.readinessProbe` and `app.livenessProbe` | `/`
 `app.regcred` | The registry credential | `regcred`
 `app.updateStrategy` | **Only used if `app.type=Deployment`!** The update strategy for your Deployment. Change to `Recreate` if you want your pods to be killed before the new ones are deployed. | `RollingUpdate`

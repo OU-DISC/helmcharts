@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.8.0
+
+Allows to add a node port to the service via `app.nodePort`.
+
 ## 3.7.0
 Allows to specify the podSecurityContext which is applied to all containers of the pod.
 The PodSecurityContext allows to overwrite the user and group that runs the container as well as to specify the group under which all volumes are being mounted.
