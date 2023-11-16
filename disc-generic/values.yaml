@@ -7,8 +7,11 @@ app:
     repository: null
     tag: latest
     pullPolicy: Always
-    # cmd: ["your_cmd"]
-    # args: ["an", "array", "of", "values"]
+  
+  # cmd: ["your_cmd"]
+  cmd: null
+  # args: ["an", "array", "of", "values"]
+  args: null
 
   # either StatefulSet or Deployment
   type: Deployment
@@ -131,8 +134,8 @@ app:
     enabled: false
     # Use this if you want to mount an already existing claim.
     existingClaim: null
-    # default here, can be changed to local-storage (talk to Matt before)
-    storageClassName: local-storage
+    # use default storage class of cluster
+    storageClassName: null
     # in case of local-storage (talk to Matt before)
     volumeName: null
     accessMode: ReadWriteMany

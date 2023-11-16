@@ -3,6 +3,16 @@
 | app.image.name is DEPRECATED - please use app.image.repository instead
 |
 {{- end }}
+{{- if .Values.app.image.cmd }}
+| !!!DEPRECATION WARNING!!!
+| app.image.cmd is DEPRECATED - please use app.cmd instead
+|
+{{- end }}
+{{- if .Values.app.image.args }}
+| !!!DEPRECATION WARNING!!!
+| app.image.args is DEPRECATED - please use app.args instead
+|
+{{- end }}
 | Thank you for installing {{ .Chart.Name }} v{{ .Chart.Version }}.
 |
 | Your release is named {{ .Release.Name }}.

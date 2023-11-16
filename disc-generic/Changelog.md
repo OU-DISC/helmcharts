@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.9.0
+
+Changed default value `app.pvc.storageClassName` to `null` to use the default storage class of the cluster.
+Rename `app.image.cmd` -> `app.cmd` and `app.image.args` -> `app.args` (backwards compatible).
+
 ## 3.8.0
 
 Allows to add a node port to the service via `app.nodePort`.

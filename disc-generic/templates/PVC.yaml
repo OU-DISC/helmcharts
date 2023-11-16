@@ -9,7 +9,9 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
 spec:
+  {{- if .Values.app.pvc.storageClassName }}
   storageClassName: {{ .Values.app.pvc.storageClassName }}
+  {{- end -}}
   {{- if .Values.app.pvc.volumeName }}
   volumeName: {{ .Values.app.pvc.volumeName }}
   {{- end }}

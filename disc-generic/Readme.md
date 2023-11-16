@@ -114,14 +114,16 @@ The following table lists the configurable parameters of the dbvis Generic chart
 
 Parameter | Description | Default | Added in version
 ---|---|---|---
-`app.image.name` | `DEPRECATED` Use app.image.repository instead | `null`
+`app.image.name` | **DEPRECATED use app.image.repository instead (will be removed in 4.0.0)** Use app.image.repository instead | `null`
 `app.image.repository` | Custom image (e.g., registry.dbvis.de/jentner/covid-19-vis, mysql) | `null`
 `app.image.tag` | Custom image tag | `latest`
 `app.image.pullPolicy` | Custom image pull policy | `Always`
-`app.image.cmd` | Overwrite the command that is executed to start your container. You can define it as an array: `["./start-app.sh"]` | `null` (use the defined command in the Dockerfile)
-`app.image.args` | Overwrite the arguments for a command at container start. You can define it as an array: `["arg0", "arg1", "arg2"]` | `null` (use the defined arguments in the Dockerfile)
+`app.image.cmd` | **DEPRECATED use app.cmd instead (will be removed in 4.0.0)** Overwrite the command that is executed to start your container. You can define it as an array: `["./start-app.sh"]` | `null` (use the defined command in the Dockerfile)
+`app.image.args` | **DEPRECATED use app.args instead (will be removed in 4.0.0)** Overwrite the arguments for a command at container start. You can define it as an array: `["arg0", "arg1", "arg2"]` | `null` (use the defined arguments in the Dockerfile)
 `app.type` | Either `Deployment` or `StatefulSet` | `Deployment` | 2.6.0
 `app.replicaCount` | Number of replicas | `1`
+`app.cmd` | Overwrite the command that is executed to start your container. You can define it as an array: `["./start-app.sh"]` | `null` (use the defined command in the Dockerfile) | 3.9.0
+`app.args` | Overwrite the arguments for a command at container start. You can define it as an array: `["arg0", "arg1", "arg2"]` | `null` (use the defined arguments in the Dockerfile) | 3.9.0
 `app.port` | Defines the container port(s) and port(s) for service. Can be either a single port `app.port: 80` or a list of ports `app.port: [80, 8080]` (number or name). The first port is used for the liveness and readiness probes (if applicable). Currently only the first port is supported as external ingress. See values.yaml for more. | `1313`
 `app.nodePort` | Optional: Defines the node port for the service. Must be in range `30000-32767`. A node port cannot be allocated by two services at the same time. | `null` | 3.8.0
 `app.health` | Defines the path for the httpGet health and readiness check. Can be overwritten in `app.readinessProbe` and `app.livenessProbe` | `/`
@@ -148,7 +150,7 @@ Parameter | Description | Default | Added in version
 `app.pvc.accessMode` | The access mode of the PVC | `ReadWriteMany`
 `app.pvc.storage` | The requested storage | `1Gi`
 `app.pvc.mountPath` | The mount path in your container | `/tmp/app`
-`app.pvc.storageClassName` | The storage class. Normally, does not need to be changed | `rook-cephfs`
+`app.pvc.storageClassName` | The storage class. Defaults to the default storage class provided in the cluster. | `null`
 `app.pvc.volumeName` | The name of a specific PV. Must have been created manually beforehand. | `null`
 `app.ingress.enabled` | Enable ingress | `true`
 `app.ingress.url` | The url for your app | `null`

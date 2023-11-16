@@ -46,13 +46,13 @@ spec:
           {{- else }}
           image: "{{ .Values.app.image.name }}:{{ required ".Values.app.image.tag is required" .Values.app.image.tag }}"
           {{- end }}
-          {{- if .Values.app.image.cmd }}
-          command: {{-  range .Values.app.image.cmd }}
+          {{- if coalesce .Values.app.cmd .Values.app.image.cmd }}
+          command: {{-  range coalesce .Values.app.cmd .Values.app.image.cmd }}
             - {{ . }}
             {{- end }}
           {{- end }}
-          {{- if .Values.app.image.args }}
-          args: {{-  range .Values.app.image.args }}
+          {{- if coalesce .Values.app.args .Values.app.image.args }}
+          args: {{-  range coalesce .Values.app.args .Values.app.image.args }}
             - {{ . }}
             {{- end }}
           {{- end }}
