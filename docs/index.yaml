@@ -1,11 +1,18 @@
 apiVersion: v1
 entries:
   disc-generic:
-  - apiVersion: v1
+  - annotations:
+      artifacthub.io/changes: "- kind: added\n  description: Add `app.cmd`\n- kind:
+        added\n  description: Add `app.args`\n- kind: changed\n  description: Change
+        default value of `app.pvc.storageClassName` to `null`\n- kind: deprecated\n
+        \ description: `app.image.cmd` is now deprecated\n- kind: deprecated\n  description:
+        `app.image.args` is now deprecated\n- kind: fixed\n  description: Updated
+        documentation  \n"
+    apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-11-16T14:22:10.8976469-08:00"
+    created: "2023-11-16T14:30:26.2175728-08:00"
     description: Deploys a DISC app
-    digest: 08aeba6dd6dc32f01af570932876d0351854d49439bf1f81a0c6049896e0d583
+    digest: e47e720994732f072278cfc520c3d88c7085a2029ae07b938593d04c3901551c
     home: https://github.com/OU-DISC/helmcharts
     maintainers:
     - email: wjentner@ou.edu
@@ -16,7 +23,7 @@ entries:
     version: 3.9.0
   - apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-11-16T14:22:10.8946502-08:00"
+    created: "2023-11-16T14:30:26.2169315-08:00"
     description: Deploys a DISC app
     digest: c5a87e21fade6a560958d51a1946878666f7f8945b8c10ec00f9a43ad04bbd45
     home: https://github.com/OU-DISC/helmcharts
@@ -29,7 +36,7 @@ entries:
     version: 3.8.0
   - apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-11-16T14:22:10.8892504-08:00"
+    created: "2023-11-16T14:30:26.2162966-08:00"
     description: Deploys a DISC app
     digest: bcf4f0b08b75181cab7871ee1d0261b3f34997cce92f33266d12fc15e7b501ce
     home: https://github.com/OU-DISC/helmcharts
@@ -40,4 +47,4 @@ entries:
     urls:
     - https://ou-disc.github.io/helmcharts/disc-generic-3.7.0.tgz
     version: 3.7.0
-generated: "2023-11-16T14:22:10.8833333-08:00"
+generated: "2023-11-16T14:30:26.2156308-08:00"

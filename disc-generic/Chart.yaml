@@ -7,3 +7,17 @@ home: https://github.com/OU-DISC/helmcharts
 maintainers:
   - name: Wolfgang Jentner
     email: wjentner@ou.edu
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Add `app.cmd`
+    - kind: added
+      description: Add `app.args`
+    - kind: changed
+      description: Change default value of `app.pvc.storageClassName` to `null`
+    - kind: deprecated
+      description: `app.image.cmd` is now deprecated
+    - kind: deprecated
+      description: `app.image.args` is now deprecated
+    - kind: fixed
+      description: Updated documentation  
