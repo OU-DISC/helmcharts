@@ -2,17 +2,24 @@ apiVersion: v1
 entries:
   disc-generic:
   - annotations:
-      artifacthub.io/changes: "- kind: added\n  description: Add `app.cmd`\n- kind:
-        added\n  description: Add `app.args`\n- kind: changed\n  description: Change
-        default value of `app.pvc.storageClassName` to `null`\n- kind: deprecated\n
-        \ description: `app.image.cmd` is now deprecated\n- kind: deprecated\n  description:
-        `app.image.args` is now deprecated\n- kind: fixed\n  description: Updated
-        documentation  \n"
+      artifacthub.io/changes: |
+        - kind: added
+          description: Add app.cmd
+        - kind: added
+          description: Add app.args
+        - kind: changed
+          description: Change default value of app.pvc.storageClassName to null
+        - kind: deprecated
+          description: app.image.cmd is now deprecated
+        - kind: deprecated
+          description: app.image.args is now deprecated
+        - kind: fixed
+          description: Updated documentation
     apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-11-16T14:30:26.2175728-08:00"
+    created: "2023-11-20T08:27:38.4947075-08:00"
     description: Deploys a DISC app
-    digest: e47e720994732f072278cfc520c3d88c7085a2029ae07b938593d04c3901551c
+    digest: fd2a75dccdb92cfd8a2aaaf64d450073c807b06346481d926e01aeba6e2ada5c
     home: https://github.com/OU-DISC/helmcharts
     maintainers:
     - email: wjentner@ou.edu
@@ -23,7 +30,7 @@ entries:
     version: 3.9.0
   - apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-11-16T14:30:26.2169315-08:00"
+    created: "2023-11-20T08:27:38.4947075-08:00"
     description: Deploys a DISC app
     digest: c5a87e21fade6a560958d51a1946878666f7f8945b8c10ec00f9a43ad04bbd45
     home: https://github.com/OU-DISC/helmcharts
@@ -36,7 +43,7 @@ entries:
     version: 3.8.0
   - apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-11-16T14:30:26.2162966-08:00"
+    created: "2023-11-20T08:27:38.4902975-08:00"
     description: Deploys a DISC app
     digest: bcf4f0b08b75181cab7871ee1d0261b3f34997cce92f33266d12fc15e7b501ce
     home: https://github.com/OU-DISC/helmcharts
@@ -47,4 +54,4 @@ entries:
     urls:
     - https://ou-disc.github.io/helmcharts/disc-generic-3.7.0.tgz
     version: 3.7.0
-generated: "2023-11-16T14:30:26.2156308-08:00"
+generated: "2023-11-20T08:27:38.4846425-08:00"
