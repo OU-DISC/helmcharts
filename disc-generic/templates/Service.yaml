@@ -17,8 +17,8 @@ spec:
     - name: http
       targetPort: {{ . }}
       port: {{ . }}
-      {{- if .Values.app.nodePort }}
-      nodePort: {{ .Values.app.nodePort }}
+      {{- if $.Values.app.nodePort }}
+      nodePort: {{ $.Values.app.nodePort }}
       {{- end }}
     {{- end }}
     {{- range (rest .Values.app.port) }}
