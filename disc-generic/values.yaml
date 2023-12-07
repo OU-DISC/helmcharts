@@ -55,6 +55,20 @@ app:
 #          key: <FIELD-IN-SECRET>
 #          optional: false
 
+  # Apply extraEnvFrom as string with templating such as (note the pipe after extraEnvFrom):
+  # extraEnvFrom: |
+  #   - secretRef:
+  #       name: {{.Release.Name}}-secret
+  #   - configMapRef:
+  #       name: {{.Release.Name}}-config
+
+  # Alternatively, you can use standard YAML code without templating (note the missing pipe after extraEnvFrom):
+  # extraEnvFrom:
+  #   - secretRef:
+  #       name: my-secret
+  #   - configMapRef:
+  #       name: my-config
+
 
   readinessProbe: |
     httpGet:

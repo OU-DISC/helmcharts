@@ -130,6 +130,7 @@ Parameter | Description | Default | Added in version
 `app.regcred` | The registry credential | `regcred`
 `app.updateStrategy` | **Only used if `app.type=Deployment`!** The update strategy for your Deployment. Change to `Recreate` if you want your pods to be killed before the new ones are deployed. | `RollingUpdate`
 `app.extraEnv: ` | Define extra environment variables (see values.yaml) | `""`
+`app.extraEnvFrom: ` | Define environment from secrets or configmaps (see values.yaml) | `null`
 `app.readinessProbe: ` | Define readiness probe (see values.yaml & https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes)  | (see values.yaml)
 `app.livenessProbe: ` | Define liveness probe (see values.yaml & https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes) | (see values.yaml)
 `app.startupProbe: ` | Define startup probe (see values.yaml & https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes) | `null` | 2.5.0

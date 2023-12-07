@@ -78,6 +78,16 @@ spec:
             - name: NVIDIA_VISIBLE_DEVICES
               value: {{ .Values.app.gpu.devices | quote }}
             {{- end }}
+          {{- if .Values.app.extraEnvFrom }}
+          envFrom:
+          {{- if eq (typeOf .Values.app.extraEnvFrom) "string" }}
+{{ tpl .Values.app.extraEnvFrom $ | indent 12 }}
+          {{- else }}
+            {{- range .Values.app.extraEnvFrom }}
+            - {{ . | toYaml | indent 14 | trim }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
           {{- with .Values.app.readinessProbe }}
           readinessProbe:
 {{ tpl . $ | nindent 12 }}
