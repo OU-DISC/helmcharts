@@ -237,6 +237,16 @@ app:
   # - name: secret2vol
   #   secretName: my-manual-secret
   #   mountPath: /mymanualsecret
+  ### Specify sub-paths for items in secrets
+  ### see here: https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#project-secret-keys-to-specific-file-paths
+  # - name: secret-secret-key-vol
+  #   secretName: test213
+  #   mountPath: /secret
+  #   items:
+  #     - key: secret.key
+  #       path: private.key
+  #     - key: public.key
+  #       path: public.key
 
   secrets: []
   ### Secrets defined here will be automatically prefixed with .Release.Name to avoid any collisions.

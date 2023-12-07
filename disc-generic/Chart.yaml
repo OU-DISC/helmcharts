@@ -23,3 +23,5 @@ annotations:
       description: Updated documentation
     - kind: fixed
       description: Fixed error if multiple ports are being used
+    - kind: fixed
+      description: Fixed syntax for secret volume mounts

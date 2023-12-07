@@ -90,7 +90,7 @@ spec:
           startupProbe:
 {{ tpl . $ | nindent 12 }}
           {{- end }}
-            {{- if or .Values.app.requests .Values.app.limits }}
+          {{- if or .Values.app.requests .Values.app.limits }}
           resources:
             {{- with .Values.app.requests }}
             {{- if or .memory .cpu .ephemeralStorage }}
@@ -141,9 +141,7 @@ spec:
             {{- range .Values.app.secretVolumes }}
             - mountPath: {{ .mountPath }}
               name: {{ .name }}
-              {{- if .readOnly }}
               readOnly: {{ .readOnly | default true }}
-              {{- end }}
             {{- end }}
           {{- end }}
       {{- with .Values.app.regcred }}
@@ -177,8 +175,15 @@ spec:
         {{- range .Values.app.secretVolumes }}
         - name: {{ .name }}
           secret:
-            name: {{ tpl .secretName $}}
+            secretName: {{ tpl .secretName $}}
             optional: {{ .optional | default false }}
+            {{- if .items }}
+            items:
+              {{- range .items }}
+              - key: {{ .key }}
+                path: {{ .path }}
+              {{- end }}
+            {{- end }}
         {{- end }}
       {{- end }}
       {{- if or .Values.app.requests.gpu .Values.app.podAntiAffinity }}

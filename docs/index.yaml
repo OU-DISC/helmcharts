@@ -17,11 +17,13 @@ entries:
           description: Updated documentation
         - kind: fixed
           description: Fixed error if multiple ports are being used
+        - kind: fixed
+          description: Fixed syntax for secret volume mounts
     apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-11-21T15:21:23.7723565-08:00"
+    created: "2023-12-07T12:05:03.7441668-08:00"
     description: Deploys a DISC app
-    digest: 6a63c6d9962f53ef46709d55ab4cb3ed10dc05c039827d7f61f4b7ffed128501
+    digest: 6c158a515e4d32e521920594ec66b2bcff75d183987dc407d145ec34ae74eb0d
     home: https://github.com/OU-DISC/helmcharts
     maintainers:
     - email: wjentner@ou.edu
@@ -32,7 +34,7 @@ entries:
     version: 3.9.0
   - apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-11-21T15:21:23.7710909-08:00"
+    created: "2023-12-07T12:05:03.7436572-08:00"
     description: Deploys a DISC app
     digest: c5a87e21fade6a560958d51a1946878666f7f8945b8c10ec00f9a43ad04bbd45
     home: https://github.com/OU-DISC/helmcharts
@@ -45,7 +47,7 @@ entries:
     version: 3.8.0
   - apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-11-21T15:21:23.7647714-08:00"
+    created: "2023-12-07T12:05:03.7380657-08:00"
     description: Deploys a DISC app
     digest: bcf4f0b08b75181cab7871ee1d0261b3f34997cce92f33266d12fc15e7b501ce
     home: https://github.com/OU-DISC/helmcharts
@@ -56,4 +58,4 @@ entries:
     urls:
     - https://ou-disc.github.io/helmcharts/disc-generic-3.7.0.tgz
     version: 3.7.0
-generated: "2023-11-21T15:21:23.7599977-08:00"
+generated: "2023-12-07T12:05:03.7325842-08:00"
