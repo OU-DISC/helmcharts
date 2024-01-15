@@ -153,6 +153,9 @@ Parameter | Description | Default | Added in version
 `app.pvc.mountPath` | The mount path in your container | `/tmp/app`
 `app.pvc.storageClassName` | The storage class. Defaults to the default storage class provided in the cluster. | `null`
 `app.pvc.volumeName` | The name of a specific PV. Must have been created manually beforehand. | `null`
+`app.pvc.selector` | Optional: Add a label selector to match a PV. | `{}`
+`app.pvc.readOnly` | Optional: Mark the volume as read only. | `false`
+`app.extraPvcs` | Define additional PVCs (see values.yaml) | `[]`
 `app.ingress.enabled` | Enable ingress | `true`
 `app.ingress.url` | The url for your app | `null`
 `app.ingress.extraAnnotations` | An array to customize your proxy handling with [Ingress-NGINX Annotations](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/) | `nil` (see values.yaml)  

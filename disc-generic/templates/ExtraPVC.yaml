@@ -1,0 +1,30 @@
+{{- if .Values.app.extraPvcs }}
+{{- range .Values.app.extraPvcs }}
+{{- if (not .existingClaim) }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ $.Release.Name }}-{{ .suffix | required ".suffix is required for app.extraPvcs" }}
+  labels:
+    {{- include "dbvis.labels" $ | nindent 4 }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version }}
+spec:
+  {{- if .storageClassName }}
+  storageClassName: {{ .storageClassName }}
+  {{- end -}}
+  {{- if .volumeName }}
+  volumeName: {{ .volumeName }}
+  {{- end }}
+  accessModes:
+    - {{ .accessMode | required ".accessMode is required for app.extraPvcs" }}
+  resources:
+    requests:
+      storage: {{ .storage | required ".storage is required for app.extraPvcs" }}
+  {{- if .selector }}
+  selector: {{- include "common.tplvalues.render" (dict "value" .selector "context" .) | nindent 4 }}
+  {{- end -}}
+{{- end }}
+{{- end }}
+{{- end }}

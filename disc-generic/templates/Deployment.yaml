@@ -131,15 +131,21 @@ spec:
             {{- end }}
             {{- end }}
           {{- end }}
-          {{- if or .Values.app.pvc.enabled .Values.app.hostVolumes .Values.app.configMapVolumes .Values.app.secretVolumes }}
+          {{- if or .Values.app.pvc.enabled .Values.app.hostVolumes .Values.app.configMapVolumes .Values.app.secretVolumes .Values.app.extraPvcs }}
           volumeMounts:
             {{- if .Values.app.pvc.enabled }}
             - mountPath: {{ .Values.app.pvc.mountPath | quote }}
               name: myglusterfsvol
+              {{- if .Values.app.pvc.enabled }}
+              readOnly: {{ .Values.app.pvc.enabled }}
+              {{- end }}
             {{- end }}
             {{- range .Values.app.hostVolumes }}
             - mountPath: {{ .mountPath }}
               name: {{ .name }}
+              {{- if .readOnly }}
+              readOnly: {{ .readOnly }}
+              {{- end }}
             {{- end }}
             {{- range .Values.app.configMapVolumes }}
             - mountPath: {{ .mountPath }}
@@ -153,12 +159,19 @@ spec:
               name: {{ .name }}
               readOnly: {{ .readOnly | default true }}
             {{- end }}
+            {{- range .Values.app.extraPvcs }}
+            - mountPath: {{ .mountPath | required ".mountPath is required for app.extraPvcs" }}
+              name: {{ $.Release.Name }}-{{ .suffix | required ".suffix is required for app.extraPvcs" }}
+              {{- if .readOnly }}
+              readOnly: {{ .readOnly }}
+              {{- end }}
+            {{- end }}
           {{- end }}
       {{- with .Values.app.regcred }}
       imagePullSecrets:
           - name: {{ . }}
       {{- end }}
-      {{- if or .Values.app.pvc.enabled .Values.app.hostVolumes .Values.app.configMapVolumes .Values.app.secretVolumes }}
+      {{- if or .Values.app.pvc.enabled .Values.app.hostVolumes .Values.app.configMapVolumes .Values.app.secretVolumes .Values.app.extraPvcs }}
       volumes:
         {{- if .Values.app.pvc.enabled }}
         - name: myglusterfsvol
@@ -166,7 +179,16 @@ spec:
             {{- if .Values.app.pvc.existingClaim }}
             claimName: {{ .Values.app.pvc.existingClaim }}
             {{- else }}
-            claimName: {{ .Release.Name }}
+            claimName: {{$.Release.Name }}
+            {{- end }}
+        {{- end }}
+        {{- range .Values.app.extraPvcs }}
+        - name: {{ $.Release.Name }}-{{ .suffix }}
+          persistentVolumeClaim:
+            {{- if .existingClaim }}
+            claimName: {{ .existingClaim }}
+            {{- else }}
+            claimName: {{ $.Release.Name }}-{{ .suffix }}
             {{- end }}
         {{- end }}
         {{- range .Values.app.hostVolumes }}

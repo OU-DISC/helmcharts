@@ -4,12 +4,37 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: added
+          description: added app.pvc.readOnly as an optional argument
+        - kind: added
+          description: added app.hostVolumes[*].readOnly as an optional argument
+        - kind: added
+          description: added app.pvc.selector as an optional argument
+        - kind: added
+          description: added app.extraPvcs
+        - kind: fixed
+          description: Updated documentation
+    apiVersion: v1
+    appVersion: 1.0.0
+    created: "2024-01-15T11:12:36.604859-08:00"
+    description: Deploys a DISC app
+    digest: 9a9204da776ee93b357661b0417a3fe44a5b2a6ae5dbfa4d49e20c7475377af2
+    home: https://github.com/OU-DISC/helmcharts
+    maintainers:
+    - email: wjentner@ou.edu
+      name: Wolfgang Jentner
+    name: disc-generic
+    urls:
+    - https://ou-disc.github.io/helmcharts/disc-generic-3.11.0.tgz
+    version: 3.11.0
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
           description: app.extraEnvFrom
         - kind: fixed
           description: Updated documentation
     apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-12-07T14:39:39.4765186-08:00"
+    created: "2024-01-15T11:12:36.6042604-08:00"
     description: Deploys a DISC app
     digest: 13b85bcef091afeb0e6d62920a5c6ef1dcd43b813c3d30ed1fef6b89d1cf8f62
     home: https://github.com/OU-DISC/helmcharts
@@ -40,7 +65,7 @@ entries:
           description: Fixed syntax for secret volume mounts
     apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-12-07T14:39:39.4922415-08:00"
+    created: "2024-01-15T11:12:36.620819-08:00"
     description: Deploys a DISC app
     digest: 6c158a515e4d32e521920594ec66b2bcff75d183987dc407d145ec34ae74eb0d
     home: https://github.com/OU-DISC/helmcharts
@@ -53,7 +78,7 @@ entries:
     version: 3.9.0
   - apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-12-07T14:39:39.4870109-08:00"
+    created: "2024-01-15T11:12:36.6152632-08:00"
     description: Deploys a DISC app
     digest: c5a87e21fade6a560958d51a1946878666f7f8945b8c10ec00f9a43ad04bbd45
     home: https://github.com/OU-DISC/helmcharts
@@ -66,7 +91,7 @@ entries:
     version: 3.8.0
   - apiVersion: v1
     appVersion: 1.0.0
-    created: "2023-12-07T14:39:39.4822196-08:00"
+    created: "2024-01-15T11:12:36.6102415-08:00"
     description: Deploys a DISC app
     digest: bcf4f0b08b75181cab7871ee1d0261b3f34997cce92f33266d12fc15e7b501ce
     home: https://github.com/OU-DISC/helmcharts
@@ -77,4 +102,4 @@ entries:
     urls:
     - https://ou-disc.github.io/helmcharts/disc-generic-3.7.0.tgz
     version: 3.7.0
-generated: "2023-12-07T14:39:39.4758973-08:00"
+generated: "2024-01-15T11:12:36.5977707-08:00"

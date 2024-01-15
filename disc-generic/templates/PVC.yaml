@@ -20,4 +20,7 @@ spec:
   resources:
     requests:
       storage: {{ .Values.app.pvc.storage }}
+  {{- if .Values.app.pvc.selector }}
+  selector: {{- include "common.tplvalues.render" (dict "value" .Values.app.pvc.selector "context" $) | nindent 4 }}
+  {{- end -}}
 {{- end }}

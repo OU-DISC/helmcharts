@@ -155,6 +155,33 @@ app:
     accessMode: ReadWriteMany
     storage: 1Gi
     mountPath: "/tmp/app"
+    # readOnly: true
+    ## @param app.pvc.selector Selector to match an existing Persistent Volume
+    ## selector:
+    ##   matchLabels:
+    ##     app: my-app
+    ##
+    selector: {}
+
+  extraPvcs: []
+    # # REQUIRED suffix - will render the PVC name as release.name-suffix
+    # suffix: extra-pvc
+    # # Use this if you want to mount an already existing claim.
+    # existingClaim: null
+    # # use default storage class of cluster
+    # storageClassName: null
+    # # in case of local-storage (talk to Matt before)
+    # volumeName: null
+    # accessMode: ReadWriteMany
+    # storage: 1Gi
+    # mountPath: "/tmp/app"
+    # # readOnly: true
+    # ## @param app.pvc.selector Selector to match an existing Persistent Volume
+    # ## selector:
+    # ##   matchLabels:
+    # ##     app: my-app
+    # ##
+    # selector: {}
 
   ingress:
     enabled: true
@@ -212,6 +239,7 @@ app:
   #   mountPath: /path/in/container
   #   see here: https://kubernetes.io/docs/concepts/storage/volumes/#hostpath
   #   type: Directory
+  #   readOnly: false
   
   configMapVolumes: []
   # # # if you want to use the maps defind below, prefix configMapName with "{$.Release.Name}-"
