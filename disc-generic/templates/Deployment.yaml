@@ -136,7 +136,7 @@ spec:
             {{- if .Values.app.pvc.enabled }}
             - mountPath: {{ .Values.app.pvc.mountPath | quote }}
               name: myglusterfsvol
-              {{- if .Values.app.pvc.enabled }}
+              {{- if .Values.app.pvc.readOnly }}
               readOnly: {{ .Values.app.pvc.readOnly }}
               {{- end }}
             {{- end }}
