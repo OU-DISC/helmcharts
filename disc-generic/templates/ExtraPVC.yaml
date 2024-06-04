@@ -25,6 +25,7 @@ spec:
   {{- if .selector }}
   selector: {{- include "common.tplvalues.render" (dict "value" .selector "context" .) | nindent 4 }}
   {{- end -}}
+---
 {{- end }}
 {{- end }}
 {{- end }}
