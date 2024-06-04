@@ -24,7 +24,8 @@ spec:
       storage: {{ .storage | required ".storage is required for app.extraPvcs" }}
   {{- if .selector }}
   selector: {{- include "common.tplvalues.render" (dict "value" .selector "context" .) | nindent 4 }}
-  {{- end -}}
+  {{- end }}
+
 ---
 {{- end }}
 {{- end }}
